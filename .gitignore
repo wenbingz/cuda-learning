@@ -1,0 +1,10 @@
+build/
+*.o
+*.out
+*.so
+*.ptx
+*.cubin
+__pycache__/
+.pytest_cache/
+.venv/
+
