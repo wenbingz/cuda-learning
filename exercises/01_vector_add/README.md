@@ -49,3 +49,16 @@ vector_add passed with n=1048576, blocks=4096, threads_per_block=256
 - `if (i < n)`：防止最后一个 block 的多余 thread 越界。
 - `cudaDeviceSynchronize`：等待 GPU kernel 执行完成。
 - `cudaMemcpyDeviceToHost`：把 GPU 结果拷回 CPU 校验。
+
+## 计时
+
+本练习会打印两类时间：
+
+```text
+cpu loop time
+gpu kernel time
+```
+
+`gpu kernel time` 使用 `cudaEvent` 计时，只覆盖 kernel 本身，不包含 CPU/GPU 内存拷贝。
+
+注意：CUDA kernel launch 默认是异步的。CPU 发起 kernel 后不会自动等待它执行完，所以不能只用普通 CPU 时间戳包住 kernel launch 来准确测 GPU 执行时间。CUDA event 会被记录在 GPU stream 上，更适合测 kernel 时间。
