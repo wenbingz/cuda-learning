@@ -62,3 +62,5 @@ gpu kernel time
 `gpu kernel time` 使用 `cudaEvent` 计时，只覆盖 kernel 本身，不包含 CPU/GPU 内存拷贝。
 
 注意：CUDA kernel launch 默认是异步的。CPU 发起 kernel 后不会自动等待它执行完，所以不能只用普通 CPU 时间戳包住 kernel launch 来准确测 GPU 执行时间。CUDA event 会被记录在 GPU stream 上，更适合测 kernel 时间。
+
+第一次 kernel 运行还可能包含 CUDA lazy loading、JIT、GPU 时钟拉起等冷启动开销。为了让计时更稳定，代码会先 warmup 几次，再重复运行 kernel 多次并取平均。

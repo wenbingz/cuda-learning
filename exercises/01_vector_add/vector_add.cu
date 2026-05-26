@@ -56,19 +56,30 @@ int main() {
     const int threads_per_block = 256;
     const int blocks = (n + threads_per_block - 1) / threads_per_block;
 
+    const int warmup_iters = 5;
+    const int timed_iters = 100;
+    for (int iter = 0; iter < warmup_iters; ++iter) {
+        vector_add<<<blocks, threads_per_block>>>(d_a, d_b, d_c, n);
+    }
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaDeviceSynchronize());
+
     cudaEvent_t start;
     cudaEvent_t stop;
     CUDA_CHECK(cudaEventCreate(&start));
     CUDA_CHECK(cudaEventCreate(&stop));
 
     CUDA_CHECK(cudaEventRecord(start));
-    vector_add<<<blocks, threads_per_block>>>(d_a, d_b, d_c, n);
+    for (int iter = 0; iter < timed_iters; ++iter) {
+        vector_add<<<blocks, threads_per_block>>>(d_a, d_b, d_c, n);
+    }
     CUDA_CHECK(cudaEventRecord(stop));
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaEventSynchronize(stop));
 
-    float kernel_ms = 0.0f;
-    CUDA_CHECK(cudaEventElapsedTime(&kernel_ms, start, stop));
+    float total_kernel_ms = 0.0f;
+    CUDA_CHECK(cudaEventElapsedTime(&total_kernel_ms, start, stop));
+    float avg_kernel_ms = total_kernel_ms / timed_iters;
 
     CUDA_CHECK(cudaMemcpy(h_c.data(), d_c, bytes, cudaMemcpyDeviceToHost));
 
@@ -97,6 +108,9 @@ int main() {
               << ", blocks=" << blocks
               << ", threads_per_block=" << threads_per_block << std::endl;
     std::cout << "cpu loop time: " << cpu_ms.count() << " ms" << std::endl;
-    std::cout << "gpu kernel time: " << kernel_ms << " ms" << std::endl;
+    std::cout << "gpu warmup iterations: " << warmup_iters << std::endl;
+    std::cout << "gpu timed iterations: " << timed_iters << std::endl;
+    std::cout << "gpu total kernel time: " << total_kernel_ms << " ms" << std::endl;
+    std::cout << "gpu avg kernel time: " << avg_kernel_ms << " ms" << std::endl;
     return 0;
 }
